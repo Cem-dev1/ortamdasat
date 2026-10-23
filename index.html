@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ortamda Sat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+
+  <div class="max-w-md w-full bg-zinc-800 rounded-2xl p-6 shadow-xl border border-zinc-700 space-y-6">
+    
+    <!-- Başlık -->
+    <div class="text-center">
+      <h1 class="text-2xl font-bold tracking-tight text-amber-400">🧠 Ortamda Sat</h1>
+      <p class="text-sm text-zinc-400 mt-1">Ortamın en bilgili adamı olma uygulaması</p>
+    </div>
+
+    <!-- İzin Durumu -->
+    <button id="permBtn" onclick="requestPermission()" class="w-full py-2.5 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm text-zinc-200 transition font-medium">
+      Bildirim İzni Ver
+    </button>
+
+    <hr class="border-zinc-700">
+
+    <!-- MOD 1: Anlık Bilgi Fırlat -->
+    <div class="space-y-2">
+      <h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Mod 1: Anlık Satış</h2>
+      <button onclick="instantSat()" class="w-full py-4 bg-amber-600 hover:bg-amber-500 font-bold text-lg rounded-xl shadow-lg active:scale-95 transition text-white">
+        💡 ŞİMDİ BİLGİ AT
+      </button>
+    </div>
+
+    <!-- MOD 2: Günlük Bilgi Zamanlayıcısı -->
+    <div class="space-y-3 pt-2">
+      <h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Mod 2: Otomatik Zamanlayıcı</h2>
+      
+      <div class="flex items-center justify-between bg-zinc-900 p-3 rounded-lg border border-zinc-700">
+        <label for="freq" class="text-sm text-zinc-300">Günde kaç bilgi gelsin:</label>
+        <select id="freq" class="bg-zinc-800 text-white border border-zinc-600 rounded p-1 text-sm outline-none">
+          <option value="1">Günde 1 Bildirim</option>
+          <option value="2">Günde 2 Bildirim</option>
+          <option value="3">Günde 3 Bildirim</option>
+        </select>
+      </div>
+
+      <button onclick="startAutoSat()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-medium rounded-lg text-sm transition">
+        ⏰ Modu Başlat
+      </button>
+
+      <p id="statusText" class="text-xs text-center text-zinc-400 min-h-[16px] mt-1"></p>
+    </div>
+
+  </div>
+
+  <script src="quotes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
