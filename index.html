@@ -15,7 +15,15 @@
       user-select: none !important;
     }
 
-    /* Ekran / Buton Sarsıntı (Shake) Animasyonu */
+    /* Yatay scroll barı gizleme */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     @keyframes screen-shake {
       0% { transform: translate(0, 0) scale(0.92); }
       20% { transform: translate(-3px, 3px) scale(0.92); }
@@ -29,7 +37,6 @@
       animation: screen-shake 0.25s cubic-bezier(.36,.07,.19,.97) both;
     }
 
-    /* Şok Dalgası */
     @keyframes shockwave {
       0% { transform: scale(0.8); opacity: 0.9; }
       100% { transform: scale(1.7); opacity: 0; }
@@ -57,13 +64,9 @@
   <main class="w-full max-w-sm mx-auto flex flex-col items-center justify-center my-auto">
     <div class="relative flex items-center justify-center">
       
-      <!-- Arka Işık -->
       <div class="absolute w-64 h-64 rounded-full bg-amber-500/20 blur-2xl pointer-events-none"></div>
-
-      <!-- Şok Dalgası Halka -->
       <div id="shockwaveRing" class="absolute w-56 h-56 rounded-full border-2 border-amber-400 opacity-0 pointer-events-none"></div>
       
-      <!-- Ana Dev Buton (Dokunmatik Olayları Bağlı) -->
       <button 
         id="satBtn" 
         ontouchstart="handleTouchStart(event)"
@@ -73,32 +76,44 @@
       >
         <span id="btnEmoji" class="text-5xl mb-1 transition-transform duration-150">🧠</span>
         <span class="text-xl font-black tracking-wider text-zinc-950 uppercase">BİLGİ SAT</span>
-        <span class="text-[10px] font-black text-amber-950 tracking-widest uppercase opacity-80 mt-0.5">Anlık Bildirim At</span>
+        <span id="selectedCatText" class="text-[10px] font-black text-amber-950 tracking-widest uppercase opacity-80 mt-0.5">HEPSİ</span>
       </button>
 
     </div>
   </main>
 
-  <!-- ALT KISIM: Zamanlayıcı Paneli -->
+  <!-- ALT KISIM: Kategori & Zamanlayıcı Paneli -->
   <footer class="w-full max-w-sm mx-auto bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 rounded-3xl p-5 space-y-4 shadow-2xl">
-    <div class="flex items-center justify-between">
-      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Otomatik Mod</span>
-      <span id="statusBadge" class="text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full font-semibold">Kapalı</span>
+    
+    <!-- Kategori Filtresi (Yatay Kaydırılabilir) -->
+    <div class="space-y-1.5">
+      <span class="text-[10px] font-extrabold text-zinc-500 uppercase tracking-wider">Kategori Seç</span>
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <button onclick="changeCategory('hepsi')" id="cat-hepsi" class="cat-btn bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">✨ Hepsi</button>
+        <button onclick="changeCategory('cografya')" id="cat-cografya" class="cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">🌍 Coğrafya</button>
+        <button onclick="changeCategory('oyun')" id="cat-oyun" class="cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">🎮 Oyun</button>
+        <button onclick="changeCategory('kultur')" id="cat-kultur" class="cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">🎬 Pop Kültür</button>
+        <button onclick="changeCategory('tarih')" id="cat-tarih" class="cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">📜 Tarih</button>
+        <button onclick="changeCategory('bilim')" id="cat-bilim" class="cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition">🔬 Bilim</button>
+      </div>
     </div>
 
-    <!-- Sıklık Seçim Kartları -->
-    <div class="grid grid-cols-3 gap-2">
-      <button type="button" onclick="selectFreq(1)" id="freq-1" class="freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-2xl py-2.5 text-center font-bold">1x</button>
-      <button type="button" onclick="selectFreq(2)" id="freq-2" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center font-bold">2x</button>
-      <button type="button" onclick="selectFreq(3)" id="freq-3" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center font-bold">3x</button>
+    <!-- Sıklık & Zamanlayıcı -->
+    <div class="flex items-center justify-between pt-1 border-t border-zinc-800/60">
+      <div class="grid grid-cols-3 gap-1.5 w-1/2">
+        <button type="button" onclick="selectFreq(1)" id="freq-1" class="freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl py-1.5 text-center text-xs font-bold">1x</button>
+        <button type="button" onclick="selectFreq(2)" id="freq-2" class="freq-btn bg-zinc-800 border border-zinc-800 text-zinc-400 rounded-xl py-1.5 text-center text-xs font-bold">2x</button>
+        <button type="button" onclick="selectFreq(3)" id="freq-3" class="freq-btn bg-zinc-800 border border-zinc-800 text-zinc-400 rounded-xl py-1.5 text-center text-xs font-bold">3x</button>
+      </div>
+
+      <button id="toggleAutoBtn" onclick="toggleAutoSat()" class="w-2/5 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 font-black text-xs rounded-xl transition shadow-lg">
+        Otomatik Başlat
+      </button>
     </div>
 
-    <button id="toggleAutoBtn" onclick="toggleAutoSat()" class="w-full py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 font-black text-sm rounded-2xl transition shadow-lg">
-      Otomatik Zamanlayıcıyı Başlat
-    </button>
   </footer>
 
-  <script src="quotes.js?v=2000"></script>
-  <script src="app.js?v=2000"></script>
+  <script src="quotes.js?v=3000"></script>
+  <script src="app.js?v=3000"></script>
 </body>
 </html>

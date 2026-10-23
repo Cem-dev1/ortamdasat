@@ -1,26 +1,64 @@
 let timerId = null;
 let selectedFreq = 1;
+let selectedCategory = "hepsi";
 let isAutoRunning = false;
 let isTouched = false;
 
-// Sarsıntı ve Titreşim Tetikleyici
+// KATEGORİYE GÖRE ELEMAN DİZİSİ
+let aktifHavuz = [];
+
+function changeCategory(cat) {
+  selectedCategory = cat;
+  aktifHavuz = []; // Kategori değiştiğinde havuzu sıfırla
+
+  // Buton tasarımlarını güncelle
+  document.querySelectorAll(".cat-btn").forEach((btn) => {
+    btn.className = "cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition";
+  });
+
+  const activeBtn = document.getElementById(`cat-${cat}`);
+  if (activeBtn) {
+    activeBtn.className = "cat-btn bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition";
+  }
+
+  // Butonun altındaki kategori yazısını güncelle
+  const catText = document.getElementById("selectedCatText");
+  if (catText) {
+    catText.innerText = cat.toUpperCase();
+  }
+}
+
+function getRandomQuote() {
+  // Eğer aktif havuz boşsa seçilen kategoriye göre yeniden doldur
+  if (aktifHavuz.length === 0) {
+    if (selectedCategory === "hepsi") {
+      aktifHavuz = [...bilgiDeposu];
+    } else {
+      aktifHavuz = bilgiDeposu.filter((item) => item.category === selectedCategory);
+    }
+  }
+
+  // Havuzdan rastgele çek ve çekilen elemanı listeden çıkar (Tekrar etmesin)
+  const randomIndex = Math.floor(Math.random() * aktifHavuz.length);
+  const item = aktifHavuz.splice(randomIndex, 1)[0];
+
+  return item.text;
+}
+
 function triggerFeedback() {
-  // 1. Cihaz Titreşimi (Android & Destekleyen Cihazlar)
   try {
     if ("vibrate" in navigator) {
       navigator.vibrate([40, 30, 60]);
     }
   } catch (e) {}
 
-  // 2. Görsel Titreme / Sarsıntı Animasyonu (iPhone/Safari İçin Tam Hissiyat)
   const btn = document.getElementById("satBtn");
   if (btn) {
     btn.classList.remove("shake-active");
-    void btn.offsetWidth; // Reflow reset
+    void btn.offsetWidth;
     btn.classList.add("shake-active");
   }
 
-  // 3. Şok Dalgası Halka Efekti
   const ring = document.getElementById("shockwaveRing");
   if (ring) {
     ring.classList.remove("shockwave-active");
@@ -28,7 +66,6 @@ function triggerFeedback() {
     ring.classList.add("shockwave-active");
   }
 
-  // 4. Emoji Sıçrama
   const emoji = document.getElementById("btnEmoji");
   if (emoji) {
     emoji.style.transform = "scale(1.4) rotate(-12deg)";
@@ -38,7 +75,6 @@ function triggerFeedback() {
   }
 }
 
-// Mobil Dokunmatik Olayları (0ms Gecikme)
 function handleTouchStart(e) {
   isTouched = true;
   const btn = document.getElementById("satBtn");
@@ -51,16 +87,14 @@ function handleTouchEnd(e) {
   if (btn) btn.style.transform = "scale(1)";
 }
 
-// BİLGİ SATIŞI (Anlık Tıklama)
 function instantSat() {
-  // Eğer touchstart çalıştıysa tekrar tetikleme yapma
-  if (!isTouched) {
-    triggerFeedback();
-  }
+  if (!isTouched) triggerFeedback();
   isTouched = false;
 
+  const quote = getRandomQuote();
+
   if (!("Notification" in window)) {
-    alert("🧠 " + getRandomQuote());
+    alert("🧠 " + quote);
     return;
   }
 
@@ -71,22 +105,17 @@ function instantSat() {
 
   try {
     new Notification("🧠 Bunu Biliyor Muydun?", {
-      body: getRandomQuote(),
+      body: quote,
       icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
     });
   } catch (e) {
-    alert("🧠 " + getRandomQuote());
+    alert("🧠 " + quote);
   }
-}
-
-function getRandomQuote() {
-  const index = Math.floor(Math.random() * bilgiDeposu.length);
-  return bilgiDeposu[index];
 }
 
 function requestPermission() {
   if (!("Notification" in window)) {
-    alert("Bu cihaz bildirim desteklemiyor kanka.");
+    alert("Bu cihaz bildirim desteklemiyor.");
     return;
   }
 
@@ -101,19 +130,19 @@ function updatePermissionUI(permission) {
 
   if (permission === "granted") {
     btn.innerText = "✅ İzin Verildi";
-    btn.className = "text-xs bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 px-3 py-1.5 rounded-full pointer-events-none font-semibold";
+    btn.className = "text-xs bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 px-3 py-1.5 rounded-full font-semibold";
   }
 }
 
 function selectFreq(freq) {
   selectedFreq = freq;
   document.querySelectorAll(".freq-btn").forEach((btn) => {
-    btn.className = "freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center font-bold";
+    btn.className = "freq-btn bg-zinc-800 border border-zinc-800 text-zinc-400 rounded-xl py-1.5 text-center text-xs font-bold";
   });
 
   const activeBtn = document.getElementById(`freq-${freq}`);
   if (activeBtn) {
-    activeBtn.className = "freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-2xl py-2.5 text-center font-bold";
+    activeBtn.className = "freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl py-1.5 text-center text-xs font-bold";
   }
 
   if (isAutoRunning) startAutoSat();
@@ -126,23 +155,18 @@ function toggleAutoSat() {
   }
 
   const toggleBtn = document.getElementById("toggleAutoBtn");
-  const badge = document.getElementById("statusBadge");
 
   if (isAutoRunning) {
     clearInterval(timerId);
     timerId = null;
     isAutoRunning = false;
-    toggleBtn.innerText = "Otomatik Zamanlayıcıyı Başlat";
-    toggleBtn.className = "w-full py-3.5 bg-zinc-100 text-zinc-950 font-black text-sm rounded-2xl transition shadow-lg";
-    badge.innerText = "Kapalı";
-    badge.className = "text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full font-semibold";
+    toggleBtn.innerText = "Otomatik Başlat";
+    toggleBtn.className = "w-2/5 py-2.5 bg-zinc-100 text-zinc-950 font-black text-xs rounded-xl transition shadow-lg";
   } else {
     isAutoRunning = true;
     startAutoSat();
-    toggleBtn.innerText = "Zamanlayıcıyı Durdur";
-    toggleBtn.className = "w-full py-3.5 bg-red-600/20 border border-red-500/40 text-red-400 font-black text-sm rounded-2xl transition";
-    badge.innerText = "Aktif";
-    badge.className = "text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2.5 py-0.5 rounded-full font-semibold";
+    toggleBtn.innerText = "Durdur";
+    toggleBtn.className = "w-2/5 py-2.5 bg-red-600/20 border border-red-500/40 text-red-400 font-black text-xs rounded-xl transition";
   }
 }
 
