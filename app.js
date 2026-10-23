@@ -2,12 +2,15 @@ let timerId = null;
 let selectedFreq = 1;
 let isAutoRunning = false;
 
-// PWA Service Worker Kaydı
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+// Haptic (Titreşim) Motoru - Sessiz Modda bile motor çalışır
+function triggerHaptic(pattern = [60]) {
+  if ("vibrate" in navigator) {
+    navigator.vibrate(pattern);
+  }
 }
 
 function requestPermission() {
+  triggerHaptic([30, 30, 30]);
   if (!("Notification" in window)) {
     alert("Bu cihaz bildirim desteklemiyor.");
     return;
@@ -24,10 +27,10 @@ function updatePermissionUI(permission) {
 
   if (permission === "granted") {
     btn.innerText = "✅ İzin Verildi";
-    btn.className = "text-xs bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 px-3 py-1.5 rounded-full pointer-events-none";
+    btn.className = "text-xs bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 px-3 py-1.5 rounded-full pointer-events-none font-semibold";
   } else if (permission === "denied") {
     btn.innerText = "❌ İzin Reddedildi";
-    btn.className = "text-xs bg-red-950/60 border border-red-800/60 text-red-400 px-3 py-1.5 rounded-full";
+    btn.className = "text-xs bg-red-950/60 border border-red-800/60 text-red-400 px-3 py-1.5 rounded-full font-semibold";
   }
 }
 
@@ -36,8 +39,29 @@ function getRandomQuote() {
   return bilgiDeposu[index];
 }
 
-// ANLIK BİLGİ SATIŞI (Ortadaki Dev Buton)
+// ANLIK BİLGİ SATIŞI (Butona Basılınca Efektler)
 function instantSat() {
+  // 1. Çift kademeli sert titreşim efekti (Dut-Dut)
+  triggerHaptic([70, 40, 90]);
+
+  // 2. Şok Dalgası Efekti
+  const ripple = document.getElementById("rippleRing");
+  if (ripple) {
+    ripple.classList.remove("ripple-effect");
+    void ripple.offsetWidth; // Trigger reflow
+    ripple.classList.add("ripple-effect");
+  }
+
+  // 3. Emoji Sıçrama Animasyonu
+  const emoji = document.getElementById("btnEmoji");
+  if (emoji) {
+    emoji.style.transform = "scale(1.4) rotate(-10deg)";
+    setTimeout(() => {
+      emoji.style.transform = "scale(1) rotate(0deg)";
+    }, 200);
+  }
+
+  // 4. Bildirim Gönderme
   if (!("Notification" in window) || Notification.permission !== "granted") {
     requestPermission();
     return;
@@ -51,23 +75,27 @@ function instantSat() {
 
 // SIKLIK SEÇİMİ (1x, 2x, 3x)
 function selectFreq(freq) {
+  triggerHaptic([40]);
   selectedFreq = freq;
+  
   document.querySelectorAll(".freq-btn").forEach((btn) => {
-    btn.className = "freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-xl py-2.5 text-center transition";
+    btn.className = "freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center transition active:scale-95";
   });
 
   const activeBtn = document.getElementById(`freq-${freq}`);
   if (activeBtn) {
-    activeBtn.className = "freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl py-2.5 text-center transition";
+    activeBtn.className = "freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-2xl py-2.5 text-center transition active:scale-95";
   }
 
   if (isAutoRunning) {
-    startAutoSat(); // Çalışıyorsa yeni sıklıkla yenile
+    startAutoSat();
   }
 }
 
 // OTOMATİK MODU BAŞLAT / DURDUR
 function toggleAutoSat() {
+  triggerHaptic([50, 50]);
+
   if (!("Notification" in window) || Notification.permission !== "granted") {
     requestPermission();
     return;
@@ -82,24 +110,23 @@ function toggleAutoSat() {
     timerId = null;
     isAutoRunning = false;
     toggleBtn.innerText = "Otomatik Zamanlayıcıyı Başlat";
-    toggleBtn.className = "w-full py-3 bg-zinc-100 text-zinc-950 font-bold text-sm rounded-xl active:scale-98 transition shadow-lg";
+    toggleBtn.className = "w-full py-3.5 bg-zinc-100 text-zinc-950 font-black text-sm rounded-2xl active:scale-95 transition shadow-lg";
     badge.innerText = "Kapalı";
-    badge.className = "text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md";
+    badge.className = "text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full font-semibold";
   } else {
     // Başlat
     isAutoRunning = true;
     startAutoSat();
     toggleBtn.innerText = "Zamanlayıcıyı Durdur";
-    toggleBtn.className = "w-full py-3 bg-red-600/20 border border-red-500/40 text-red-400 font-bold text-sm rounded-xl active:scale-98 transition";
+    toggleBtn.className = "w-full py-3.5 bg-red-600/20 border border-red-500/40 text-red-400 font-black text-sm rounded-2xl active:scale-95 transition";
     badge.innerText = "Aktif";
-    badge.className = "text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md";
+    badge.className = "text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2.5 py-0.5 rounded-full font-semibold";
   }
 }
 
 function startAutoSat() {
   if (timerId) clearInterval(timerId);
 
-  // Web simülasyonu test süreleri (1x -> 30sn, 2x -> 20sn, 3x -> 10sn)
   const intervals = {
     1: 30000,
     2: 20000,
