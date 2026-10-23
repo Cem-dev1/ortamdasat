@@ -9,7 +9,7 @@ let aktifHavuz = [];
 
 function changeCategory(cat) {
   selectedCategory = cat;
-  aktifHavuz = [];
+  aktifHavuz = []; // Kategori değiştiğinde havuzu sıfırla
 
   document.querySelectorAll(".cat-btn").forEach((btn) => {
     btn.className = "cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition";
@@ -27,7 +27,8 @@ function changeCategory(cat) {
 }
 
 function getRandomQuote() {
-  if (aktifHavuz.length === 0) {
+  // Eğer aktif havuz boşsa seçilen kategoriye göre yeniden doldur
+  if (!aktifHavuz || aktifHavuz.length === 0) {
     if (selectedCategory === "hepsi") {
       aktifHavuz = [...bilgiDeposu];
     } else {
@@ -35,10 +36,19 @@ function getRandomQuote() {
     }
   }
 
-  const randomIndex = Math.floor(Math.random() * aktifHavuz.length);
-  const item = aktifHavuz.splice(randomIndex, 1)[0];
+  // Havuz hâlâ boşsa (örneğin kategori eşleşmediyse) tüm depodan çek
+  if (aktifHavuz.length === 0) {
+    aktifHavuz = [...bilgiDeposu];
+  }
 
-  return item.text;
+  const randomIndex = Math.floor(Math.random() * aktifHavuz.length);
+  const selectedItem = aktifHavuz.splice(randomIndex, 1)[0];
+
+  // Obje kontrolü: text değerini garanti et
+  if (typeof selectedItem === "object" && selectedItem.text) {
+    return selectedItem.text;
+  }
+  return selectedItem;
 }
 
 function triggerFeedback() {
@@ -83,14 +93,14 @@ function handleTouchEnd(e) {
   if (btn) btn.style.transform = "scale(1)";
 }
 
-function gonderBildirim(quote) {
+function gonderBildirim(quoteText) {
   try {
     new Notification("🧠 Bunu Biliyor Muydun?", {
-      body: quote,
+      body: quoteText,
       icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
     });
   } catch (e) {
-    alert("🧠 " + quote);
+    alert("🧠 " + quoteText);
   }
 }
 
