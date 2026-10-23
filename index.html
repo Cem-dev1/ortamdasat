@@ -2,82 +2,103 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>Ortamda Sat</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="quotes.js?v=2"></script>
-  <script src="app.js?v=2"></script>
   <style>
-    body {
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+    * {
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+    }
+
+    /* Ekran / Buton Sarsıntı (Shake) Animasyonu */
+    @keyframes screen-shake {
+      0% { transform: translate(0, 0) scale(0.92); }
+      20% { transform: translate(-3px, 3px) scale(0.92); }
+      40% { transform: translate(3px, -2px) scale(0.92); }
+      60% { transform: translate(-2px, -1px) scale(0.92); }
+      80% { transform: translate(2px, 1px) scale(0.92); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+
+    .shake-active {
+      animation: screen-shake 0.25s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Şok Dalgası */
+    @keyframes shockwave {
+      0% { transform: scale(0.8); opacity: 0.9; }
+      100% { transform: scale(1.7); opacity: 0; }
+    }
+
+    .shockwave-active {
+      animation: shockwave 0.4s ease-out forwards;
     }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col justify-between p-6 font-sans antialiased overflow-hidden">
 
-  <!-- Üst Bar / İzin & Durum -->
-  <header class="w-full max-w-sm mx-auto flex items-center justify-between pt-4">
+  <!-- Üst Bar -->
+  <header class="w-full max-w-sm mx-auto flex items-center justify-between pt-2">
     <div class="flex items-center gap-2">
-      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-      <span class="text-xs font-semibold tracking-wider text-zinc-400 uppercase">ORTAMDA SAT</span>
+      <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="text-[11px] font-extrabold tracking-widest text-zinc-400 uppercase">ORTAMDA SAT</span>
     </div>
-    <button id="permBtn" onclick="requestPermission()" class="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full active:scale-95 transition">
+    <button id="permBtn" onclick="requestPermission()" class="text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 px-3 py-1.5 rounded-full font-semibold">
       🔔 İzin Ver
     </button>
   </header>
 
   <!-- ORTA KISIM: Dev Satış Butonu -->
   <main class="w-full max-w-sm mx-auto flex flex-col items-center justify-center my-auto">
-    <div class="relative group">
-      <!-- Arka plan glow efekti -->
-      <div class="absolute -inset-1 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full blur-xl opacity-40 group-active:opacity-75 transition duration-300"></div>
+    <div class="relative flex items-center justify-center">
       
-      <!-- Ana Buton -->
-      <button onclick="instantSat()" class="relative w-56 h-56 rounded-full bg-gradient-to-b from-amber-500 to-orange-600 border-4 border-amber-300/30 shadow-2xl flex flex-col items-center justify-center active:scale-90 transition duration-150">
-        <span class="text-5xl mb-1">🧠</span>
+      <!-- Arka Işık -->
+      <div class="absolute w-64 h-64 rounded-full bg-amber-500/20 blur-2xl pointer-events-none"></div>
+
+      <!-- Şok Dalgası Halka -->
+      <div id="shockwaveRing" class="absolute w-56 h-56 rounded-full border-2 border-amber-400 opacity-0 pointer-events-none"></div>
+      
+      <!-- Ana Dev Buton (Dokunmatik Olayları Bağlı) -->
+      <button 
+        id="satBtn" 
+        ontouchstart="handleTouchStart(event)"
+        ontouchend="handleTouchEnd(event)"
+        onclick="instantSat()" 
+        class="relative w-56 h-56 rounded-full bg-gradient-to-b from-amber-500 via-orange-500 to-amber-600 border-4 border-amber-300/40 shadow-[0_0_50px_rgba(245,158,11,0.35)] flex flex-col items-center justify-center transition-transform duration-75 ease-out"
+      >
+        <span id="btnEmoji" class="text-5xl mb-1 transition-transform duration-150">🧠</span>
         <span class="text-xl font-black tracking-wider text-zinc-950 uppercase">BİLGİ SAT</span>
-        <span class="text-[10px] font-bold text-amber-950 tracking-widest uppercase opacity-80 mt-1">Anlık Bildirim At</span>
+        <span class="text-[10px] font-black text-amber-950 tracking-widest uppercase opacity-80 mt-0.5">Anlık Bildirim At</span>
       </button>
+
     </div>
   </main>
 
   <!-- ALT KISIM: Zamanlayıcı Paneli -->
-  <footer class="w-full max-w-sm mx-auto bg-zinc-900/80 backdrop-blur-md border border-zinc-800/80 rounded-3xl p-5 space-y-4 shadow-2xl">
+  <footer class="w-full max-w-sm mx-auto bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 rounded-3xl p-5 space-y-4 shadow-2xl">
     <div class="flex items-center justify-between">
       <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Otomatik Mod</span>
-      <span id="statusBadge" class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md">Kapalı</span>
+      <span id="statusBadge" class="text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full font-semibold">Kapalı</span>
     </div>
 
     <!-- Sıklık Seçim Kartları -->
     <div class="grid grid-cols-3 gap-2">
-      <button type="button" onclick="selectFreq(1)" id="freq-1" class="freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl py-2.5 text-center transition">
-        <div class="text-sm font-bold">1x</div>
-        <div class="text-[10px] text-zinc-400">Günde</div>
-      </button>
-
-      <button type="button" onclick="selectFreq(2)" id="freq-2" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-xl py-2.5 text-center transition">
-        <div class="text-sm font-bold">2x</div>
-        <div class="text-[10px] text-zinc-400">Günde</div>
-      </button>
-
-      <button type="button" onclick="selectFreq(3)" id="freq-3" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-xl py-2.5 text-center transition">
-        <div class="text-sm font-bold">3x</div>
-        <div class="text-[10px] text-zinc-400">Günde</div>
-      </button>
+      <button type="button" onclick="selectFreq(1)" id="freq-1" class="freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-2xl py-2.5 text-center font-bold">1x</button>
+      <button type="button" onclick="selectFreq(2)" id="freq-2" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center font-bold">2x</button>
+      <button type="button" onclick="selectFreq(3)" id="freq-3" class="freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-2xl py-2.5 text-center font-bold">3x</button>
     </div>
 
-    <!-- Başlat / Durdur Butonu -->
-    <button id="toggleAutoBtn" onclick="toggleAutoSat()" class="w-full py-3 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-sm rounded-xl active:scale-98 transition shadow-lg">
+    <button id="toggleAutoBtn" onclick="toggleAutoSat()" class="w-full py-3.5 bg-zinc-100 hover:bg-white text-zinc-950 font-black text-sm rounded-2xl transition shadow-lg">
       Otomatik Zamanlayıcıyı Başlat
     </button>
   </footer>
 
-  <script src="quotes.js"></script>
-  <script src="app.js"></script>
+  <script src="quotes.js?v=2000"></script>
+  <script src="app.js?v=2000"></script>
 </body>
 </html>
