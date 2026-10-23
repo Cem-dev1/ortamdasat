@@ -1,33 +1,33 @@
 let timerId = null;
+let selectedFreq = 1;
+let isAutoRunning = false;
 
-// Tarayıcı ve Safari kontrolü
+// PWA Service Worker Kaydı
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
 function requestPermission() {
   if (!("Notification" in window)) {
-    alert("Kanka bu tarayıcıda bildirim desteği kapalı. iPhone kullanıyorsan ana ekrana eklemen gerekebilir.");
+    alert("Bu cihaz bildirim desteklemiyor.");
     return;
   }
 
-  // Safari hem Promise hem callback desteklediği için ikisini de kapsayan yapı:
   Notification.requestPermission().then((permission) => {
-    handlePermissionResult(permission);
-  }).catch(() => {
-    // Eski Safari sürümleri için fallback
-    Notification.requestPermission((permission) => {
-      handlePermissionResult(permission);
-    });
+    updatePermissionUI(permission);
   });
 }
 
-function handlePermissionResult(permission) {
+function updatePermissionUI(permission) {
   const btn = document.getElementById("permBtn");
+  if (!btn) return;
+
   if (permission === "granted") {
-    if (btn) {
-      btn.innerText = "✅ Bildirim İzni Verildi";
-      btn.classList.replace("bg-zinc-700", "bg-emerald-900/40");
-      btn.classList.add("text-emerald-400", "pointer-events-none");
-    }
-  } else {
-    alert("Bildirim izni engellendi kanka. Tarayıcı ayarlarından izin vermen lazım.");
+    btn.innerText = "✅ İzin Verildi";
+    btn.className = "text-xs bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 px-3 py-1.5 rounded-full pointer-events-none";
+  } else if (permission === "denied") {
+    btn.innerText = "❌ İzin Reddedildi";
+    btn.className = "text-xs bg-red-950/60 border border-red-800/60 text-red-400 px-3 py-1.5 rounded-full";
   }
 }
 
@@ -36,47 +36,89 @@ function getRandomQuote() {
   return bilgiDeposu[index];
 }
 
-// MOD 1: Anlık Bilgi
+// ANLIK BİLGİ SATIŞI (Ortadaki Dev Buton)
 function instantSat() {
-  if (!("Notification" in window)) {
-    alert("Bildirim desteği yok kanka.");
-    return;
-  }
-
-  if (Notification.permission !== "granted") {
-    alert("Önce bildirim izni vermen lazım.");
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    requestPermission();
     return;
   }
 
   new Notification("🧠 Bunu Biliyor Muydun?", {
     body: getRandomQuote(),
+    icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
   });
 }
 
-// MOD 2: Zamanlayıcı
-function startAutoSat() {
+// SIKLIK SEÇİMİ (1x, 2x, 3x)
+function selectFreq(freq) {
+  selectedFreq = freq;
+  document.querySelectorAll(".freq-btn").forEach((btn) => {
+    btn.className = "freq-btn bg-zinc-800/50 border border-zinc-800 text-zinc-400 rounded-xl py-2.5 text-center transition";
+  });
+
+  const activeBtn = document.getElementById(`freq-${freq}`);
+  if (activeBtn) {
+    activeBtn.className = "freq-btn bg-amber-500/10 border border-amber-500/40 text-amber-400 rounded-xl py-2.5 text-center transition";
+  }
+
+  if (isAutoRunning) {
+    startAutoSat(); // Çalışıyorsa yeni sıklıkla yenile
+  }
+}
+
+// OTOMATİK MODU BAŞLAT / DURDUR
+function toggleAutoSat() {
   if (!("Notification" in window) || Notification.permission !== "granted") {
-    alert("Önce bildirim izni vermen lazım kanka.");
+    requestPermission();
     return;
   }
 
+  const toggleBtn = document.getElementById("toggleAutoBtn");
+  const badge = document.getElementById("statusBadge");
+
+  if (isAutoRunning) {
+    // Durdur
+    clearInterval(timerId);
+    timerId = null;
+    isAutoRunning = false;
+    toggleBtn.innerText = "Otomatik Zamanlayıcıyı Başlat";
+    toggleBtn.className = "w-full py-3 bg-zinc-100 text-zinc-950 font-bold text-sm rounded-xl active:scale-98 transition shadow-lg";
+    badge.innerText = "Kapalı";
+    badge.className = "text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md";
+  } else {
+    // Başlat
+    isAutoRunning = true;
+    startAutoSat();
+    toggleBtn.innerText = "Zamanlayıcıyı Durdur";
+    toggleBtn.className = "w-full py-3 bg-red-600/20 border border-red-500/40 text-red-400 font-bold text-sm rounded-xl active:scale-98 transition";
+    badge.innerText = "Aktif";
+    badge.className = "text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-md";
+  }
+}
+
+function startAutoSat() {
   if (timerId) clearInterval(timerId);
 
-  const freq = parseInt(document.getElementById("freq").value);
-  const status = document.getElementById("statusText");
-
+  // Web simülasyonu test süreleri (1x -> 30sn, 2x -> 20sn, 3x -> 10sn)
   const intervals = {
     1: 30000,
     2: 20000,
     3: 10000
   };
 
-  const delay = intervals[freq];
-  status.innerText = `Aktif! Test için her ${delay / 1000} saniyede bir yeni bilgi düşecek.`;
+  const delay = intervals[selectedFreq];
 
   timerId = setInterval(() => {
     new Notification("💡 Ortamda Satmalık Bilgi", {
       body: getRandomQuote(),
+      icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
     });
   }, delay);
 }
+
+// Sayfa yüklendiğinde durum kontrolü
+window.addEventListener("DOMContentLoaded", () => {
+  if ("Notification" in window) {
+    updatePermissionUI(Notification.permission);
+  }
+});
