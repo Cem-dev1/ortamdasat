@@ -4,14 +4,13 @@ let selectedCategory = "hepsi";
 let isAutoRunning = false;
 let isTouched = false;
 
-// KATEGORİYE GÖRE ELEMAN DİZİSİ
+// KATEGORİYE GÖRE ELEMAN DİZİSİ (Sıfır Tekrar Mantığı)
 let aktifHavuz = [];
 
 function changeCategory(cat) {
   selectedCategory = cat;
-  aktifHavuz = []; // Kategori değiştiğinde havuzu sıfırla
+  aktifHavuz = [];
 
-  // Buton tasarımlarını güncelle
   document.querySelectorAll(".cat-btn").forEach((btn) => {
     btn.className = "cat-btn bg-zinc-800 border border-zinc-700/60 text-zinc-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition";
   });
@@ -21,7 +20,6 @@ function changeCategory(cat) {
     activeBtn.className = "cat-btn bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition";
   }
 
-  // Butonun altındaki kategori yazısını güncelle
   const catText = document.getElementById("selectedCatText");
   if (catText) {
     catText.innerText = cat.toUpperCase();
@@ -29,7 +27,6 @@ function changeCategory(cat) {
 }
 
 function getRandomQuote() {
-  // Eğer aktif havuz boşsa seçilen kategoriye göre yeniden doldur
   if (aktifHavuz.length === 0) {
     if (selectedCategory === "hepsi") {
       aktifHavuz = [...bilgiDeposu];
@@ -38,7 +35,6 @@ function getRandomQuote() {
     }
   }
 
-  // Havuzdan rastgele çek ve çekilen elemanı listeden çıkar (Tekrar etmesin)
   const randomIndex = Math.floor(Math.random() * aktifHavuz.length);
   const item = aktifHavuz.splice(randomIndex, 1)[0];
 
@@ -87,6 +83,17 @@ function handleTouchEnd(e) {
   if (btn) btn.style.transform = "scale(1)";
 }
 
+function gonderBildirim(quote) {
+  try {
+    new Notification("🧠 Bunu Biliyor Muydun?", {
+      body: quote,
+      icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+    });
+  } catch (e) {
+    alert("🧠 " + quote);
+  }
+}
+
 function instantSat() {
   if (!isTouched) triggerFeedback();
   isTouched = false;
@@ -99,18 +106,18 @@ function instantSat() {
   }
 
   if (Notification.permission !== "granted") {
-    requestPermission();
+    Notification.requestPermission().then((permission) => {
+      updatePermissionUI(permission);
+      if (permission === "granted") {
+        gonderBildirim(quote);
+      } else {
+        alert("🧠 " + quote);
+      }
+    });
     return;
   }
 
-  try {
-    new Notification("🧠 Bunu Biliyor Muydun?", {
-      body: quote,
-      icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-    });
-  } catch (e) {
-    alert("🧠 " + quote);
-  }
+  gonderBildirim(quote);
 }
 
 function requestPermission() {
@@ -177,12 +184,7 @@ function startAutoSat() {
   const delay = intervals[selectedFreq];
 
   timerId = setInterval(() => {
-    try {
-      new Notification("💡 Ortamda Satmalık Bilgi", {
-        body: getRandomQuote(),
-        icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-      });
-    } catch (e) {}
+    gonderBildirim(getRandomQuote());
   }, delay);
 }
 
