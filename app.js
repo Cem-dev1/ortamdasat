@@ -2,22 +2,29 @@ let timerId = null;
 let selectedFreq = 1;
 let isAutoRunning = false;
 
-// Haptic (Titreşim) Motoru - Sessiz Modda bile motor çalışır
+// Haptic (Titreşim) Motoru - Mobilde hata vermemesi için korumalı
 function triggerHaptic(pattern = [60]) {
-  if ("vibrate" in navigator) {
-    navigator.vibrate(pattern);
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  } catch (err) {
+    // Desteklemeyen cihazlarda sessizce geç
   }
 }
 
 function requestPermission() {
   triggerHaptic([30, 30, 30]);
+  
   if (!("Notification" in window)) {
-    alert("Bu cihaz bildirim desteklemiyor.");
+    alert("Bu tarayıcı bildirim desteklemiyor kanka. (iPhone'daysan ana ekrana eklemen gerekebilir)");
     return;
   }
 
   Notification.requestPermission().then((permission) => {
     updatePermissionUI(permission);
+  }).catch((err) => {
+    console.log("İzin alınamadı:", err);
   });
 }
 
@@ -39,20 +46,19 @@ function getRandomQuote() {
   return bilgiDeposu[index];
 }
 
-// ANLIK BİLGİ SATIŞI (Butona Basılınca Efektler)
+// ANLIK BİLGİ SATIŞI
 function instantSat() {
-  // 1. Çift kademeli sert titreşim efekti (Dut-Dut)
   triggerHaptic([70, 40, 90]);
 
-  // 2. Şok Dalgası Efekti
+  // Şok Dalgası Efekti
   const ripple = document.getElementById("rippleRing");
   if (ripple) {
     ripple.classList.remove("ripple-effect");
-    void ripple.offsetWidth; // Trigger reflow
+    void ripple.offsetWidth;
     ripple.classList.add("ripple-effect");
   }
 
-  // 3. Emoji Sıçrama Animasyonu
+  // Emoji Sıçrama Animasyonu
   const emoji = document.getElementById("btnEmoji");
   if (emoji) {
     emoji.style.transform = "scale(1.4) rotate(-10deg)";
@@ -61,19 +67,29 @@ function instantSat() {
     }, 200);
   }
 
-  // 4. Bildirim Gönderme
-  if (!("Notification" in window) || Notification.permission !== "granted") {
+  // Bildirim Gönderme Kontrolü
+  if (!("Notification" in window)) {
+    alert(getRandomQuote()); // Bildirim desteklemeyen telefonda direkt ekrana alert basıp bilgiyi versin!
+    return;
+  }
+
+  if (Notification.permission !== "granted") {
     requestPermission();
     return;
   }
 
-  new Notification("🧠 Bunu Biliyor Muydun?", {
-    body: getRandomQuote(),
-    icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-  });
+  try {
+    new Notification("🧠 Bunu Biliyor Muydun?", {
+      body: getRandomQuote(),
+      icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
+    });
+  } catch (err) {
+    // Mobil tarayıcı kısıtlaması varsa ekranda alert ile göster
+    alert(getRandomQuote());
+  }
 }
 
-// SIKLIK SEÇİMİ (1x, 2x, 3x)
+// SIKLIK SEÇİMİ
 function selectFreq(freq) {
   triggerHaptic([40]);
   selectedFreq = freq;
@@ -92,7 +108,7 @@ function selectFreq(freq) {
   }
 }
 
-// OTOMATİK MODU BAŞLAT / DURDUR
+// OTOMATİK MOD
 function toggleAutoSat() {
   triggerHaptic([50, 50]);
 
@@ -105,7 +121,6 @@ function toggleAutoSat() {
   const badge = document.getElementById("statusBadge");
 
   if (isAutoRunning) {
-    // Durdur
     clearInterval(timerId);
     timerId = null;
     isAutoRunning = false;
@@ -114,7 +129,6 @@ function toggleAutoSat() {
     badge.innerText = "Kapalı";
     badge.className = "text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full font-semibold";
   } else {
-    // Başlat
     isAutoRunning = true;
     startAutoSat();
     toggleBtn.innerText = "Zamanlayıcıyı Durdur";
@@ -136,14 +150,17 @@ function startAutoSat() {
   const delay = intervals[selectedFreq];
 
   timerId = setInterval(() => {
-    new Notification("💡 Ortamda Satmalık Bilgi", {
-      body: getRandomQuote(),
-      icon: "https://cdn-icons-png.flaticon.com/512/1828/1828843.png"
-    });
+    try {
+      new Notification("💡 Ortamda Satmalık Bilgi", {
+        body: getRandomQuote(),
+        icon: "https://cdn-icons-png.flatic-on.com/512/1828/1828843.png"
+      });
+    } catch (e) {
+      // Bildirim atamazsa sessiz kal
+    }
   }, delay);
 }
 
-// Sayfa yüklendiğinde durum kontrolü
 window.addEventListener("DOMContentLoaded", () => {
   if ("Notification" in window) {
     updatePermissionUI(Notification.permission);
